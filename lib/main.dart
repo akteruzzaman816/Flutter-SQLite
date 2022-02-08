@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sqlite/sql_helper.dart';
+import 'package:flutter_sqlite/widgets/sql_test.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isLoading = true;
 
   void getAllItems() async{
-    final data = await SQLHelper.getItems();
+    final data = await SQLTest.getAllData();
     setState(() {
       _notesData = data;
       isLoading  = false;
@@ -50,12 +50,17 @@ class _MyHomePageState extends State<MyHomePage> {
     getAllItems();
   }
 
-  addNotes(String ?id) {
+  addNotes(int ?id,String ?title,String ?des) {
 
     TextEditingController titleController       = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
 
-    return showModalBottomSheet<dynamic>(
+    if(title != null && des != null){
+      titleController.text = title;
+      descriptionController.text = des;
+    }
+
+    return showModalBottomSheet(
         context: context,
         elevation: 5,
         isScrollControlled: false,
@@ -88,7 +93,23 @@ class _MyHomePageState extends State<MyHomePage> {
                   width: MediaQuery.of(context).size.width,
                   child: ElevatedButton(
                     onPressed: (){
-                      SQLHelper.saveNotes(titleController.text.toString(), descriptionController.text.toString());
+                      if(id == null){
+                        SQLTest.insertData(titleController.text.toString(), descriptionController.text.toString()).then((value) => {
+                          if(value != -1){
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text("Data inserted successfully"),
+                            ))
+                          }else{
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text("Failed to insert Data"),
+                            ))
+                          }
+
+                        });
+                      }else{
+                        SQLTest.updateData(id,titleController.text.toString(), descriptionController.text.toString());
+                      }
+
                       Navigator.of(context).pop(context);
                       getAllItems();
 
@@ -110,8 +131,8 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: isLoading ? const Center(
-        child: CircularProgressIndicator(),
+      body: _notesData.isEmpty ? const Center(
+        child: Text("No Data Found",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20)),
       ) : ListView.builder(
         itemCount: _notesData.length,
         itemBuilder: (context,position){
@@ -126,12 +147,17 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     GestureDetector(
                       onTap: (){
-                        print(_notesData[position]['title']);
-                        print(_notesData[position]['description']);
+                        addNotes(_notesData[position]["id"],_notesData[position]["title"],_notesData[position]["description"]);
                       },
                         child: Icon(Icons.edit)
                     ),
-                    Icon(Icons.delete)
+                    GestureDetector(
+                        onTap: (){
+                          SQLTest.deleteData(_notesData[position]["id"]);
+                          getAllItems();
+                        },
+                        child: Icon(Icons.delete)
+                    ),
                   ],
                 ),
               ),
@@ -142,7 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: (){
-          addNotes(null);
+          addNotes(null,null,null);
         },
       ),
     );
