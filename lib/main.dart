@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sqlite/widgets/sql_test.dart';
+import 'package:flutter_sqlite/sql_helper.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,13 +34,11 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
   List<Map<String, dynamic>> _notesData= [];
-  bool isLoading = true;
 
   void getAllItems() async{
-    final data = await SQLTest.getAllData();
+    final data = await SQLHelper.getItems();
     setState(() {
       _notesData = data;
-      isLoading  = false;
     });
   }
 
@@ -94,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: ElevatedButton(
                     onPressed: (){
                       if(id == null){
-                        SQLTest.insertData(titleController.text.toString(), descriptionController.text.toString()).then((value) => {
+                        SQLHelper.insertData(titleController.text.toString(), descriptionController.text.toString()).then((value) => {
                           if(value != -1){
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                               content: Text("Data inserted successfully"),
@@ -107,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                         });
                       }else{
-                        SQLTest.updateData(id,titleController.text.toString(), descriptionController.text.toString());
+                        SQLHelper.updateData(id,titleController.text.toString(), descriptionController.text.toString());
                       }
 
                       Navigator.of(context).pop(context);
@@ -136,30 +134,28 @@ class _MyHomePageState extends State<MyHomePage> {
       ) : ListView.builder(
         itemCount: _notesData.length,
         itemBuilder: (context,position){
-          return Container(
-            child: Card(
-              elevation: 4,
-              child: ListTile(
-                title: Text(_notesData[position]['title']),
-                subtitle: Text(_notesData[position]['description']),
-                trailing: Wrap(
-                  spacing: 12,
-                  children: [
-                    GestureDetector(
+          return Card(
+            elevation: 4,
+            child: ListTile(
+              title: Text(_notesData[position]['title']),
+              subtitle: Text(_notesData[position]['description']),
+              trailing: Wrap(
+                spacing: 12,
+                children: [
+                  GestureDetector(
+                    onTap: (){
+                      addNotes(_notesData[position]["id"],_notesData[position]["title"],_notesData[position]["description"]);
+                    },
+                      child: const Icon(Icons.edit)
+                  ),
+                  GestureDetector(
                       onTap: (){
-                        addNotes(_notesData[position]["id"],_notesData[position]["title"],_notesData[position]["description"]);
+                        SQLHelper.deleteData(_notesData[position]["id"]);
+                        getAllItems();
                       },
-                        child: Icon(Icons.edit)
-                    ),
-                    GestureDetector(
-                        onTap: (){
-                          SQLTest.deleteData(_notesData[position]["id"]);
-                          getAllItems();
-                        },
-                        child: Icon(Icons.delete)
-                    ),
-                  ],
-                ),
+                      child: const Icon(Icons.delete)
+                  ),
+                ],
               ),
             ),
           );

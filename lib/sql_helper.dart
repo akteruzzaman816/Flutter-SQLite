@@ -17,6 +17,13 @@ class SQLHelper{
       });
   }
 
+  static Future<int> insertData(String title,String des) async{
+    final database = await SQLHelper.db();
+    var values = {"title":title,"description":des};
+    int status = await database.insert("items", values);
+    return status;
+  }
+
 
   static Future<List<Map<String, dynamic>>> getItems() async {
     final db = await SQLHelper.db();
@@ -30,8 +37,19 @@ class SQLHelper{
         "items",
         values,
     conflictAlgorithm: sql.ConflictAlgorithm.replace);
-    print("$title  $description "+status.toString());
+    return status;
+  }
 
+  static Future<int> updateData(int id,String title,String des) async{
+    final database = await SQLHelper.db();
+    var values = {"title":title,"description":des};
+    int status = await database.update("items",values,where: "id = ?",whereArgs: [id]);
+    return status;
+  }
+
+  static Future<int> deleteData(int id) async{
+    final database = await SQLHelper.db();
+    int status = await database.delete("items",where: "id = ?",whereArgs: [id]);
     return status;
   }
 
